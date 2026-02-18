@@ -307,7 +307,6 @@ document.getElementById("backBtn").onclick = goBackFromScanner;
 
 function fadeScannerOut() {
     document.getElementById("instruction").style.opacity = "0";
-    document.getElementById("bigArrow").style.opacity = "0";
     document.getElementById("cameraContainer").style.opacity = "0";
 
     const frame = document.querySelector(".scannerFrame");
@@ -457,7 +456,6 @@ function resetToHome() {
     scanner.style.transform = "translateX(100%)";
 
     document.getElementById("instruction").style.opacity = "1";
-    document.getElementById("bigArrow").style.opacity = "1";
     document.getElementById("cameraContainer").style.opacity = "1";
 
     const frame = document.querySelector(".scannerFrame");
@@ -472,3 +470,4 @@ function resetToHome() {
 </body>
 
 </html>
+
