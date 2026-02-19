@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+
 <head>
 <link rel="icon" href="/favicon.ico">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -37,8 +38,10 @@ html, body {
     transform: translateX(0);
 }
 
-#roleScreen { z-index: 9; }
+#mainScreen { z-index: 8; }
+#roleScreen { z-index: 9; transform: translateX(100%); }
 #homeScreen { z-index: 10; transform: translateX(100%); }
+
 #scannerScreen, #successScreen { pointer-events: none; }
 #scannerScreen.active, #successScreen.active { pointer-events: auto; }
 
@@ -50,6 +53,8 @@ html, body {
     font-weight: 700;
     margin-bottom: 40px;
     text-shadow: 0 0 20px rgba(0,0,0,0.8);
+    text-align: center;
+    padding: 0 20px;
 }
 
 .buttonRow {
@@ -91,7 +96,7 @@ html, body {
 #signInBtn { background: radial-gradient(circle at 30% 30%, #1adf6a, #0a8f3a); }
 #signOutBtn { background: radial-gradient(circle at 30% 30%, #ff5b5b, #b30000); }
 
-#backBtn {
+.backCircle {
     position: absolute;
     top: 20px;
     left: 20px;
@@ -213,18 +218,19 @@ html, body {
 
 <div class="overlay"></div>
 
-<!-- ROLE SELECTION SCREEN -->
-<div id="roleScreen" class="screen">
-    <div class="title">Who Are You?</div>
+<!-- MAIN WELCOME SCREEN -->
+<div id="mainScreen" class="screen">
+    <div class="title">Welcome to the Spa.<br>Please sign in.</div>
     <div class="buttonRow">
         <div id="visitorBtn" class="roundButton">VISITOR</div>
         <div id="staffBtn" class="roundButton">STAFF</div>
     </div>
 </div>
 
-<!-- HOME SCREEN -->
-<div id="homeScreen" class="screen">
-    <div id="homeTitle" class="title"></div>
+<!-- ROLE SCREEN -->
+<div id="roleScreen" class="screen">
+    <div id="roleBack" class="backCircle">⟵</div>
+    <div id="roleTitle" class="title"></div>
     <div class="buttonRow">
         <div id="signInBtn" class="roundButton">SIGN IN</div>
         <div id="signOutBtn" class="roundButton">SIGN OUT</div>
@@ -233,7 +239,7 @@ html, body {
 
 <!-- SCANNER SCREEN -->
 <div id="scannerScreen" class="screen">
-    <div id="backBtn">⟵</div>
+    <div id="scannerBack" class="backCircle">⟵</div>
     <div id="instruction">Please position your ticket in the designated area<br>on the back of the iPad</div>
     <div id="cameraContainer">
         <video id="cameraPreview" autoplay playsinline></video>
@@ -257,14 +263,13 @@ let role = "";
 let mode = "";
 let stream = null;
 let scanning = false;
-let lastDirection = "in";
 
+const main = document.getElementById("mainScreen");
 const roleScreen = document.getElementById("roleScreen");
-const home = document.getElementById("homeScreen");
 const scanner = document.getElementById("scannerScreen");
 const success = document.getElementById("successScreen");
 const successBox = document.getElementById("successBox");
-const homeTitle = document.getElementById("homeTitle");
+const roleTitle = document.getElementById("roleTitle");
 
 const video = document.getElementById("cameraPreview");
 const canvas = document.getElementById("qrCanvas");
@@ -273,50 +278,50 @@ const ctx = canvas.getContext("2d");
 document.getElementById("visitorBtn").onclick = () => selectRole("visitor");
 document.getElementById("staffBtn").onclick = () => selectRole("staff");
 
+document.getElementById("roleBack").onclick = () => goBackToMain();
+document.getElementById("scannerBack").onclick = () => goBackFromScanner();
+
 document.getElementById("signInBtn").onclick = () => startScanner("in");
 document.getElementById("signOutBtn").onclick = () => startScanner("out");
-document.getElementById("backBtn").onclick = goBackFromScanner;
 
 function selectRole(r) {
     role = r;
 
     if (role === "visitor") {
-        homeTitle.innerText = "Welcome to Spa ‘Name’. Your time to relax begins now — enjoy your visit.";
+        roleTitle.innerHTML = "Welcome to the Spa.<br>Please choose an option below.";
+        roleScreen.style.transform = "translateX(-100%)";
     } else {
-        homeTitle.innerText = "Welcome back. Please sign in below.";
+        roleTitle.innerHTML = "Staff Check‑In<br>Please select an option below.";
+        roleScreen.style.transform = "translateX(100%)";
     }
 
-    roleScreen.style.transform = "translateX(-100%)";
-    home.style.transform = "translateX(0)";
+    main.style.transform = "translateX(0)";
+    requestAnimationFrame(() => {
+        main.style.transform = "translateX(-100%)";
+        roleScreen.style.transform = "translateX(0)";
+    });
 }
 
-function fadeScannerOut() {
-    const instruction = document.getElementById("instruction");
-    if (instruction) instruction.style.opacity = "0";
+function goBackToMain() {
+    roleScreen.style.transform = "translateX(0)";
+    main.style.transform = "translateX(-100%)";
 
-    const container = document.getElementById("cameraContainer");
-    if (container) container.style.opacity = "0";
-
-    const frame = document.querySelector(".scannerFrame");
-    const icon = document.querySelector(".scannerIcon");
-    const laser = document.querySelector(".laser");
-
-    if (frame) frame.style.opacity = "0";
-    if (icon) icon.style.opacity = "0";
-    if (laser) laser.style.opacity = "0";
+    requestAnimationFrame(() => {
+        roleScreen.style.transform = role === "visitor" ? "translateX(-100%)" : "translateX(100%)";
+        main.style.transform = "translateX(0)";
+    });
 }
 
 function startScanner(type) {
     mode = type;
-    lastDirection = type;
 
     scanner.classList.add("active");
 
     scanner.style.transform = "translateX(-100%)";
-    home.style.transform = "translateX(0)";
+    roleScreen.style.transform = "translateX(0)";
 
     requestAnimationFrame(() => {
-        home.style.transform = "translateX(100%)";
+        roleScreen.style.transform = "translateX(100%)";
         scanner.style.transform = "translateX(0)";
     });
 
@@ -331,7 +336,7 @@ function startScanner(type) {
     })
     .catch(() => {
         alert("Camera access is required.");
-        resetToHome();
+        goBackToMain();
     });
 }
 
@@ -344,11 +349,11 @@ function goBackFromScanner() {
         stream = null;
     }
 
-    home.style.transform = "translateX(100%)";
+    roleScreen.style.transform = "translateX(100%)";
     scanner.style.transform = "translateX(0)";
 
     requestAnimationFrame(() => {
-        home.style.transform = "translateX(0)";
+        roleScreen.style.transform = "translateX(0)";
         scanner.style.transform = "translateX(-100%)";
     });
 }
@@ -382,7 +387,6 @@ function startScanningLoop() {
 function handleScan(data) {
     scanning = false;
     scanner.classList.remove("active");
-    fadeScannerOut();
 
     if (stream) {
         stream.getTracks().forEach(t => t.stop());
@@ -397,15 +401,17 @@ function handleScan(data) {
             <div style="font-size:2.4rem; margin-bottom:20px;">
                 ${role === "visitor" ? "Welcome to the spa," : "Welcome back,"} ${name}
             </div>
-            <div style="font-size:1.6rem;">You have been signed in</div>
+            <div style="font-size:1.6rem;">
+                ${role === "visitor" ? "Your time to relax begins now." : "You have been signed in."}
+            </div>
         `;
     } else {
         successBox.style.background = "radial-gradient(circle at 30% 30%, #ff5b5b, #b30000)";
         successBox.innerHTML = `
             <div style="font-size:2.4rem; margin-bottom:20px;">
-                Thank you for visiting, ${name}
+                ${role === "visitor" ? "Thank you for visiting," : "Goodbye,"} ${name}
             </div>
-            <div style="font-size:1.6rem;">You have been signed out</div>
+            <div style="font-size:1.6rem;">You have been signed out.</div>
         `;
     }
 
@@ -424,28 +430,9 @@ function handleScan(data) {
         setTimeout(() => {
             success.style.display = "none";
             success.classList.remove("active");
-            resetToHome();
+            goBackToMain();
         }, 400);
     }, 2000);
-}
-
-function resetToHome() {
-    home.style.transform = "translateX(0)";
-    scanner.style.transform = "translateX(100%)";
-
-    const instruction = document.getElementById("instruction");
-    if (instruction) instruction.style.opacity = "1";
-
-    const container = document.getElementById("cameraContainer");
-    if (container) container.style.opacity = "1";
-
-    const frame = document.querySelector(".scannerFrame");
-    const icon = document.querySelector(".scannerIcon");
-    const laser = document.querySelector(".laser");
-
-    if (frame) frame.style.opacity = "1";
-    if (icon) icon.style.opacity = "1";
-    if (laser) laser.style.opacity = "1";
 }
 </script>
 
