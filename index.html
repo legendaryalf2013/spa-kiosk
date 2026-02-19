@@ -40,7 +40,6 @@ html, body {
 
 #mainScreen { z-index: 8; }
 #roleScreen { z-index: 9; transform: translateX(100%); }
-#homeScreen { z-index: 10; transform: translateX(100%); }
 
 #scannerScreen, #successScreen { pointer-events: none; }
 #scannerScreen.active, #successScreen.active { pointer-events: auto; }
@@ -289,10 +288,10 @@ function selectRole(r) {
 
     if (role === "visitor") {
         roleTitle.innerHTML = "Welcome to the Spa.<br>Please choose an option below.";
-        roleScreen.style.transform = "translateX(-100%)";
+        roleScreen.style.transform = "translateX(100%)"; // visitor slides from RIGHT
     } else {
         roleTitle.innerHTML = "Staff Check‑In<br>Please select an option below.";
-        roleScreen.style.transform = "translateX(100%)";
+        roleScreen.style.transform = "translateX(-100%)"; // staff slides from LEFT
     }
 
     main.style.transform = "translateX(0)";
@@ -307,7 +306,7 @@ function goBackToMain() {
     main.style.transform = "translateX(-100%)";
 
     requestAnimationFrame(() => {
-        roleScreen.style.transform = role === "visitor" ? "translateX(-100%)" : "translateX(100%)";
+        roleScreen.style.transform = role === "visitor" ? "translateX(100%)" : "translateX(-100%)";
         main.style.transform = "translateX(0)";
     });
 }
@@ -430,7 +429,16 @@ function handleScan(data) {
         setTimeout(() => {
             success.style.display = "none";
             success.classList.remove("active");
-            goBackToMain();
+
+            // FIXED: Return to role screen, not main
+            roleScreen.style.transform = role === "visitor" ? "translateX(100%)" : "translateX(-100%)";
+            scanner.style.transform = "translateX(0)";
+
+            requestAnimationFrame(() => {
+                roleScreen.style.transform = "translateX(0)";
+                scanner.style.transform = "translateX(-100%)";
+            });
+
         }, 400);
     }, 2000);
 }
